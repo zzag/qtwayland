@@ -19,9 +19,14 @@ class Q_WAYLANDCLIENT_EXPORT QWaylandFullScreenShellV1Surface : public QWaylandS
 public:
     QWaylandFullScreenShellV1Surface(QtWayland::zwp_fullscreen_shell_v1 *shell, QWaylandWindow *window);
 
+    bool isCreated() const override;
+    bool create() override;
+    void destroy() override;
+
 private:
     QtWayland::zwp_fullscreen_shell_v1 *m_shell = nullptr;
     QWaylandWindow *m_window = nullptr;
+    bool m_created = false;
 };
 
 } // namespace QtWaylandClient

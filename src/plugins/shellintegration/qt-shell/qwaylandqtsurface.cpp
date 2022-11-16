@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qwaylandqtsurface_p.h"
+#include "qwaylandqtshellintegration.h"
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatformwindow.h>
 
@@ -9,16 +10,43 @@ QT_BEGIN_NAMESPACE
 
 namespace QtWaylandClient {
 
-QWaylandQtSurface::QWaylandQtSurface(struct ::zqt_shell_surface_v1 *shell_surface, QWaylandWindow *window)
+QWaylandQtSurface::QWaylandQtSurface(QWaylandQtShellIntegration *shell, QWaylandWindow *window)
     : QWaylandShellSurface(window)
-    , QtWayland::zqt_shell_surface_v1(shell_surface)
+    , m_shell(shell)
 {
-    sendSizeHints();
 }
 
 QWaylandQtSurface::~QWaylandQtSurface()
 {
-    zqt_shell_surface_v1::destroy();
+    destroy();
+}
+
+bool QWaylandQtSurface::isCreated() const
+{
+    return isInitialized();
+}
+
+bool QWaylandQtSurface::create()
+{
+    init(m_shell->surface_create(wlSurface()));
+    sendSizeHints();
+    return true;
+}
+
+void QWaylandQtSurface::destroy()
+{
+    m_pendingSize = QSize();
+    m_pendingPosition = { -1, -1 };
+    m_pendingPositionValid = false;
+    m_pendingStates = Qt::WindowNoState;
+    m_currentStates = Qt::WindowNoState;
+    m_frameMargins = QMargins();
+    m_currentConfigureSerial = UINT32_MAX;
+    m_capabilities = 0;
+
+    if (object()) {
+        zqt_shell_surface_v1::destroy();
+    }
 }
 
 void QWaylandQtSurface::resetConfiguration()
@@ -158,22 +186,26 @@ void QWaylandQtSurface::zqt_shell_surface_v1_set_window_state(uint32_t serial, u
 
 void QWaylandQtSurface::setWindowGeometry(const QRect &rect)
 {
-    set_size(rect.width(), rect.height());
+    if (QtWayland::zqt_shell_surface_v1::object())
+        set_size(rect.width(), rect.height());
 }
 
 void QWaylandQtSurface::setWindowPosition(const QPoint &position)
 {
-    reposition(position.x(), position.y());
+    if (QtWayland::zqt_shell_surface_v1::object())
+        reposition(position.x(), position.y());
 }
 
 void QWaylandQtSurface::setWindowFlags(Qt::WindowFlags flags)
 {
-    set_window_flags(flags);
+    if (QtWayland::zqt_shell_surface_v1::object())
+        set_window_flags(flags);
 }
 
 void QWaylandQtSurface::requestWindowStates(Qt::WindowStates states)
 {
-    change_window_state(states & ~Qt::WindowActive);
+    if (QtWayland::zqt_shell_surface_v1::object())
+        change_window_state(states & ~Qt::WindowActive);
 }
 
 bool QWaylandQtSurface::resize(QWaylandInputDevice *inputDevice, Qt::Edges edge)
@@ -203,12 +235,14 @@ QMargins QWaylandQtSurface::serverSideFrameMargins() const
 
 void QWaylandQtSurface::raise()
 {
-    QtWayland::zqt_shell_surface_v1::raise();
+    if (QtWayland::zqt_shell_surface_v1::object())
+        QtWayland::zqt_shell_surface_v1::raise();
 }
 
 void QWaylandQtSurface::lower()
 {
-    QtWayland::zqt_shell_surface_v1::lower();
+    if (QtWayland::zqt_shell_surface_v1::object())
+        QtWayland::zqt_shell_surface_v1::lower();
 }
 
 }

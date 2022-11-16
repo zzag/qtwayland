@@ -25,6 +25,9 @@ public:
     bool initialize(QWaylandDisplay *display) override;
     QWaylandShellSurface *createShellSurface(QWaylandWindow *window) override;
 
+    QtWayland::ivi_application *iviApplication() const { return m_iviApplication.get(); }
+    QtWayland::ivi_controller *iviController() const { return m_iviController.get(); }
+
 private:
     uint32_t getNextUniqueSurfaceId();
 

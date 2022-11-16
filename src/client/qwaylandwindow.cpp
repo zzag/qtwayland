@@ -55,6 +55,7 @@ QWaylandWindow::QWaylandWindow(QWindow *window, QWaylandDisplay *display)
     static WId id = 1;
     mWindowId = id++;
     initializeWlSurface();
+    setShellIntegration(display->shellIntegration());
 }
 
 QWaylandWindow::~QWaylandWindow()
@@ -63,6 +64,8 @@ QWaylandWindow::~QWaylandWindow()
 
     if (mSurface)
         reset();
+
+    mShellSurface.reset();
 
     const QWindow *parent = window();
     const auto tlw = QGuiApplication::topLevelWindows();
@@ -100,11 +103,9 @@ void QWaylandWindow::initWindow()
                 mSubSurfaceWindow = new QWaylandSubSurface(this, parent, subsurface);
         }
     } else if (shouldCreateShellSurface()) {
-        Q_ASSERT(!mShellSurface);
-        Q_ASSERT(mDisplay->shellIntegration());
+        Q_ASSERT(mShellSurface);
 
-        mShellSurface = mDisplay->shellIntegration()->createShellSurface(this);
-        if (mShellSurface) {
+        if (mShellSurface->create()) {
             // Set initial surface title
             setWindowTitle(window()->title());
 
@@ -162,7 +163,7 @@ void QWaylandWindow::initWindow()
 
     setGeometry_helper(geometry);
     setMask(window()->mask());
-    if (mShellSurface)
+    if (mShellSurface && mShellSurface->isCreated())
         mShellSurface->requestWindowStates(window()->windowStates());
     handleContentOrientationChange(window()->contentOrientation());
     mFlags = window()->flags();
@@ -181,9 +182,20 @@ void QWaylandWindow::initializeWlSurface()
     emit wlSurfaceCreated();
 }
 
+void QWaylandWindow::setShellIntegration(QWaylandShellIntegration *shellIntegration)
+{
+    Q_ASSERT(shellIntegration);
+    if (mShellSurface && mShellSurface->isCreated()) {
+        qCWarning(lcQpaWayland) << "Cannot set shell integration while there's already a shell surface created";
+        return;
+    }
+    mShellIntegration = shellIntegration;
+    mShellSurface.reset(shellIntegration->createShellSurface(this));
+}
+
 bool QWaylandWindow::shouldCreateShellSurface() const
 {
-    if (!mDisplay->shellIntegration())
+    if (!shellIntegration())
         return false;
 
     if (shouldCreateSubSurface())
@@ -216,8 +228,8 @@ void QWaylandWindow::endFrame()
 void QWaylandWindow::reset()
 {
     closeChildPopups();
-    delete mShellSurface;
-    mShellSurface = nullptr;
+    if (mShellSurface)
+        mShellSurface->destroy();
     delete mSubSurfaceWindow;
     mSubSurfaceWindow = nullptr;
 
@@ -422,7 +434,7 @@ void QWaylandWindow::resizeFromApplyConfigure(const QSize &sizeWithMargins, cons
 
 void QWaylandWindow::sendExposeEvent(const QRect &rect)
 {
-    if (!(mShellSurface && mShellSurface->handleExpose(rect)))
+    if (!(mShellSurface && mShellSurface->isCreated() && mShellSurface->handleExpose(rect)))
         QWindowSystemInterface::handleExposeEvent(window(), rect);
     else
         qCDebug(lcQpaWayland) << "sendExposeEvent: intercepted by shell extension, not sending";
@@ -798,7 +810,7 @@ wl_surface *QWaylandWindow::wlSurface()
 
 QWaylandShellSurface *QWaylandWindow::shellSurface() const
 {
-    return mShellSurface;
+    return mShellSurface.data();
 }
 
 QWaylandSubSurface *QWaylandWindow::subSurfaceWindow() const
@@ -892,7 +904,7 @@ bool QWaylandWindow::createDecoration()
         decoration = false;
     if (mSubSurfaceWindow)
         decoration = false;
-    if (!mShellSurface || !mShellSurface->wantsDecorations())
+    if (!mShellSurface || !mShellSurface->isCreated() || !mShellSurface->wantsDecorations())
         decoration = false;
 
     bool hadDecoration = mWindowDecorationEnabled;
@@ -1281,7 +1293,7 @@ bool QWaylandWindow::isExposed() const
     if (mFrameCallbackTimedOut)
         return false;
 
-    if (mShellSurface)
+    if (mShellSurface && mShellSurface->isCreated())
         return mShellSurface->isExposed();
 
     if (mSubSurfaceWindow)

@@ -14,14 +14,19 @@ namespace QtWaylandClient {
 
 class QWaylandWindow;
 class QWaylandInputDevice;
+class QWaylandQtShellIntegration;
 class QWindow;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandQtSurface : public QWaylandShellSurface
         , public QtWayland::zqt_shell_surface_v1
 {
 public:
-    QWaylandQtSurface(struct ::zqt_shell_surface_v1 *shell_surface, QWaylandWindow *window);
+    QWaylandQtSurface(QWaylandQtShellIntegration *shell, QWaylandWindow *window);
     ~QWaylandQtSurface() override;
+
+    bool isCreated() const override;
+    bool create() override;
+    void destroy() override;
 
     void applyConfigure() override;
     void setWindowGeometry(const QRect &rect) override;
@@ -54,6 +59,7 @@ private:
                                                 uint32_t top, uint32_t bottom) override;
     void zqt_shell_surface_v1_set_capabilities(uint32_t capabilities) override;
 
+    QWaylandQtShellIntegration *m_shell;
     QSize m_pendingSize;
     QPoint m_pendingPosition = { -1, -1 };
     bool m_pendingPositionValid = false;

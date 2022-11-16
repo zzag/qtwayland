@@ -16,28 +16,52 @@ QT_BEGIN_NAMESPACE
 
 namespace QtWaylandClient {
 
-QWaylandWlShellSurface::QWaylandWlShellSurface(struct ::wl_shell_surface *shell_surface, QWaylandWindow *window)
+QWaylandWlShellSurface::QWaylandWlShellSurface(struct ::wl_shell *shell, QWaylandWindow *window)
     : QWaylandShellSurface(window)
-    , QtWayland::wl_shell_surface(shell_surface)
+    , m_shell(shell)
     , m_window(window)
 {
-    if (window->display()->windowExtension())
-        m_extendedWindow = new QWaylandExtendedSurface(window);
+}
 
-    Qt::WindowType type = window->window()->type();
-    auto *transientParent = window->transientParent();
+QWaylandWlShellSurface::~QWaylandWlShellSurface()
+{
+    destroy();
+}
+
+bool QWaylandWlShellSurface::isCreated() const
+{
+    return m_created;
+}
+
+bool QWaylandWlShellSurface::create()
+{
+    init(wl_shell_get_shell_surface(m_shell, m_window->wlSurface()));
+    m_created = true;
+
+    if (m_window->display()->windowExtension())
+        m_extendedWindow = new QWaylandExtendedSurface(m_window);
+
+    Qt::WindowType type = m_window->window()->type();
+    auto *transientParent = m_window->transientParent();
     if (type == Qt::Popup && transientParent && transientParent->wlSurface())
         setPopup(transientParent, m_window->display()->lastInputDevice(), m_window->display()->lastInputSerial());
     else if (transientParent && transientParent->wlSurface())
         updateTransientParent(transientParent->window());
     else
         setTopLevel();
+
+    return true;
 }
 
-QWaylandWlShellSurface::~QWaylandWlShellSurface()
+void QWaylandWlShellSurface::destroy()
 {
-    wl_shell_surface_destroy(object());
+    if (m_created) {
+        // destroy wl_shell_surface proxy object, unfortunately there's no destructor request
+        m_created = false;
+        wl_shell_surface_destroy(object());
+    }
     delete m_extendedWindow;
+    m_extendedWindow = nullptr;
 }
 
 bool QWaylandWlShellSurface::resize(QWaylandInputDevice *inputDevice, Qt::Edges edges)

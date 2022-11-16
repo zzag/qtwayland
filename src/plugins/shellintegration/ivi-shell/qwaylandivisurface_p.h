@@ -16,15 +16,18 @@ class QWaylandWindow;
 class QWaylandInputDevice;
 class QWindow;
 class QWaylandExtendedSurface;
+class QWaylandIviShellIntegration;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandIviSurface : public QtWayland::ivi_surface
         , public QWaylandShellSurface, public QtWayland::ivi_controller_surface
 {
 public:
-    QWaylandIviSurface(struct ::ivi_surface *shell_surface, QWaylandWindow *window);
-    QWaylandIviSurface(struct ::ivi_surface *shell_surface, QWaylandWindow *window,
-                       struct ::ivi_controller_surface *iviControllerSurface);
+    QWaylandIviSurface(QWaylandIviShellIntegration *shell, uint32_t surfaceId, QWaylandWindow *window);
     ~QWaylandIviSurface() override;
+
+    bool isCreated() const override;
+    bool create() override;
+    void destroy() override;
 
     void applyConfigure() override;
 
@@ -33,9 +36,11 @@ private:
     void ivi_surface_configure(int32_t width, int32_t height) override;
     void ivi_controller_surface_visibility(int32_t visibility) override;
 
+    QWaylandIviShellIntegration *m_shell;
     QWaylandWindow *m_window = nullptr;
     QWaylandExtendedSurface *m_extendedWindow = nullptr;
     QSize m_pendingSize = {0, 0};
+    uint32_t m_surfaceId;
 };
 
 }

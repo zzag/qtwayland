@@ -236,15 +236,30 @@ void QWaylandXdgSurface::Popup::xdg_popup_popup_done()
     m_xdgSurface->m_window->window()->close();
 }
 
-QWaylandXdgSurface::QWaylandXdgSurface(QWaylandXdgShell *shell, ::xdg_surface *surface, QWaylandWindow *window)
+QWaylandXdgSurface::QWaylandXdgSurface(QWaylandXdgShell *shell, QWaylandWindow *window)
     : QWaylandShellSurface(window)
-    , xdg_surface(surface)
     , m_shell(shell)
     , m_window(window)
 {
-    QWaylandDisplay *display = window->display();
-    Qt::WindowType type = window->window()->type();
-    auto *transientParent = window->transientParent();
+}
+
+QWaylandXdgSurface::~QWaylandXdgSurface()
+{
+    destroy();
+}
+
+bool QWaylandXdgSurface::isCreated() const
+{
+    return m_toplevel || m_popup;
+}
+
+bool QWaylandXdgSurface::create()
+{
+    QWaylandDisplay *display = m_window->display();
+    Qt::WindowType type = m_window->window()->type();
+    auto *transientParent = m_window->transientParent();
+
+    QtWayland::xdg_surface::init(m_shell->get_xdg_surface(m_window->wlSurface()));
 
     if (type == Qt::ToolTip && transientParent) {
         setPopup(transientParent);
@@ -258,20 +273,29 @@ QWaylandXdgSurface::QWaylandXdgSurface(QWaylandXdgShell *shell, ::xdg_surface *s
                 m_toplevel->set_parent(parentXdgSurface->m_toplevel->object());
         }
     }
+
     setSizeHints();
+    return true;
 }
 
-QWaylandXdgSurface::~QWaylandXdgSurface()
+void QWaylandXdgSurface::destroy()
 {
-    if (m_toplevel) {
-        delete m_toplevel;
-        m_toplevel = nullptr;
+    delete m_toplevel;
+    m_toplevel = nullptr;
+
+    delete m_popup;
+    m_popup = nullptr;
+
+    m_configured = false;
+    m_exposeRegion = QRegion();
+    m_pendingConfigureSerial = 0;
+    m_appliedConfigureSerial = 0;
+    m_alertState = false;
+    m_activationToken = QString();
+
+    if (QtWayland::xdg_surface::object()) {
+        QtWayland::xdg_surface::destroy();
     }
-    if (m_popup) {
-        delete m_popup;
-        m_popup = nullptr;
-    }
-    destroy();
 }
 
 bool QWaylandXdgSurface::resize(QWaylandInputDevice *inputDevice, Qt::Edges edges)
@@ -366,7 +390,8 @@ void QWaylandXdgSurface::propagateSizeHints()
 
 void QWaylandXdgSurface::setWindowGeometry(const QRect &rect)
 {
-    set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());
+    if (xdg_surface::object())
+        set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());
 }
 
 void QWaylandXdgSurface::setSizeHints()
@@ -601,7 +626,7 @@ QWaylandXdgShell::~QWaylandXdgShell()
 
 QWaylandXdgSurface *QWaylandXdgShell::getXdgSurface(QWaylandWindow *window)
 {
-    return new QWaylandXdgSurface(this, get_xdg_surface(window->wlSurface()), window);
+    return new QWaylandXdgSurface(this, window);
 }
 
 void QWaylandXdgShell::xdg_wm_base_ping(uint32_t serial)

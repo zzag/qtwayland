@@ -27,8 +27,7 @@ QWaylandQtShellIntegration::QWaylandQtShellIntegration()
 
 QWaylandShellSurface *QWaylandQtShellIntegration::createShellSurface(QWaylandWindow *window)
 {
-    auto *surface = surface_create(wlSurfaceForWindow(window));
-    return new QWaylandQtSurface(surface, window);
+    return new QWaylandQtSurface(this, window);
 }
 
 }

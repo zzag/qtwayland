@@ -48,6 +48,7 @@ class QWaylandSubSurface;
 class QWaylandAbstractDecoration;
 class QWaylandInputDevice;
 class QWaylandScreen;
+class QWaylandShellIntegration;
 class QWaylandShmBackingStore;
 class QWaylandPointerEvent;
 class QWaylandPointerGestureSwipeEvent;
@@ -192,6 +193,9 @@ public:
     void setBackingStore(QWaylandShmBackingStore *backingStore) { mBackingStore = backingStore; }
     QWaylandShmBackingStore *backingStore() const { return mBackingStore; }
 
+    void setShellIntegration(QWaylandShellIntegration *shellIntegration);
+    QWaylandShellIntegration *shellIntegration() const { return mShellIntegration; }
+
     bool setKeyboardGrabEnabled(bool) override { return false; }
     void propagateSizeHints() override;
     void addAttachOffset(const QPoint point);
@@ -234,7 +238,8 @@ protected:
     mutable QReadWriteLock mSurfaceLock;
     QScopedPointer<QWaylandSurface> mSurface;
 
-    QWaylandShellSurface *mShellSurface = nullptr;
+    QWaylandShellIntegration *mShellIntegration = nullptr;
+    QScopedPointer<QWaylandShellSurface> mShellSurface;
     QWaylandSubSurface *mSubSurfaceWindow = nullptr;
     QList<QWaylandSubSurface *> mChildren;
 

@@ -14,11 +14,27 @@ QWaylandFullScreenShellV1Surface::QWaylandFullScreenShellV1Surface(QtWayland::zw
     , m_shell(shell)
     , m_window(window)
 {
+}
+
+bool QWaylandFullScreenShellV1Surface::isCreated() const
+{
+    return m_created;
+}
+
+bool QWaylandFullScreenShellV1Surface::create()
+{
     auto *screen = m_window->waylandScreen();
     auto *output = screen ? screen->output() : nullptr;
     m_shell->present_surface(m_window->wlSurface(),
                              QtWayland::zwp_fullscreen_shell_v1::present_method_default,
                              output);
+    m_created = true;
+    return true;
+}
+
+void QWaylandFullScreenShellV1Surface::destroy()
+{
+    m_created = false;
 }
 
 } // namespace QtWaylandClient

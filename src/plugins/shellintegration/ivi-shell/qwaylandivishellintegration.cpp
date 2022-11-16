@@ -8,7 +8,6 @@
 
 #include <QtWaylandClient/private/qwaylanddisplay_p.h>
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
-#include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
 #include "qwaylandivisurface_p.h"
 
@@ -98,29 +97,7 @@ QWaylandShellSurface *QWaylandIviShellIntegration::createShellSurface(QWaylandWi
     if (surfaceId == 0)
         return nullptr;
 
-    struct ivi_surface *surface = m_iviApplication->surface_create(surfaceId, window->wlSurface());
-    if (!m_iviController)
-        return new QWaylandIviSurface(surface, window);
-
-    struct ::ivi_controller_surface *controller = m_iviController->ivi_controller::surface_create(surfaceId);
-    QWaylandIviSurface *iviSurface = new QWaylandIviSurface(surface, window, controller);
-
-    if (window->window()->type() == Qt::Popup) {
-        QPoint transientPos = window->geometry().topLeft(); // this is absolute
-        QWaylandWindow *parent = window->transientParent();
-        if (parent && parent->decoration()) {
-            transientPos -= parent->geometry().topLeft();
-            transientPos.setX(transientPos.x() + parent->decoration()->margins().left());
-            transientPos.setY(transientPos.y() + parent->decoration()->margins().top());
-        }
-        QSize size = window->windowGeometry().size();
-        iviSurface->ivi_controller_surface::set_destination_rectangle(transientPos.x(),
-                                                                      transientPos.y(),
-                                                                      size.width(),
-                                                                      size.height());
-    }
-
-    return iviSurface;
+    return new QWaylandIviSurface(this, surfaceId, window);
 }
 
 }

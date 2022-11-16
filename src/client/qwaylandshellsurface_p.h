@@ -76,6 +76,10 @@ public:
 
     virtual QString externWindowHandle() { return QString(); }
 
+    virtual bool isCreated() const = 0;
+    virtual bool create() = 0;
+    virtual void destroy() = 0;
+
     inline QWaylandWindow *window() { return m_window; }
     QPlatformWindow *platformWindow();
     struct wl_surface *wlSurface();

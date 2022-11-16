@@ -36,7 +36,7 @@ class Q_WAYLANDCLIENT_EXPORT QWaylandWlShellSurface : public QWaylandShellSurfac
 {
     Q_OBJECT
 public:
-    QWaylandWlShellSurface(struct ::wl_shell_surface *shell_surface, QWaylandWindow *window);
+    QWaylandWlShellSurface(struct ::wl_shell *shell, QWaylandWindow *window);
     ~QWaylandWlShellSurface() override;
 
     using QtWayland::wl_shell_surface::resize;
@@ -44,6 +44,10 @@ public:
 
     using QtWayland::wl_shell_surface::move;
     bool move(QWaylandInputDevice *inputDevice) override;
+
+    bool isCreated() const override;
+    bool create() override;
+    void destroy() override;
 
     void setTitle(const QString & title) override;
     void setAppId(const QString &appId) override;
@@ -66,6 +70,7 @@ private:
     void updateTransientParent(QWindow *parent);
     void setPopup(QWaylandWindow *parent, QWaylandInputDevice *device, uint serial);
 
+    ::wl_shell *m_shell = nullptr;
     QWaylandWindow *m_window = nullptr;
     struct {
         Qt::WindowStates states = Qt::WindowNoState;
@@ -76,6 +81,7 @@ private:
     // There's really no need to have pending and applied state on wl-shell, but we do it just to
     // keep the different shell implementations more similar.
     QWaylandExtendedSurface *m_extendedWindow = nullptr;
+    bool m_created = false;
 
     void shell_surface_ping(uint32_t serial) override;
     void shell_surface_configure(uint32_t edges,

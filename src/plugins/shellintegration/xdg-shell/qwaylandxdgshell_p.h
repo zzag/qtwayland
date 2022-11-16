@@ -44,8 +44,12 @@ class Q_WAYLANDCLIENT_EXPORT QWaylandXdgSurface : public QWaylandShellSurface, p
 {
     Q_OBJECT
 public:
-    QWaylandXdgSurface(QWaylandXdgShell *shell, ::xdg_surface *surface, QWaylandWindow *window);
+    QWaylandXdgSurface(QWaylandXdgShell *shell, QWaylandWindow *window);
     ~QWaylandXdgSurface() override;
+
+    bool isCreated() const override;
+    bool create() override;
+    void destroy() override;
 
     bool resize(QWaylandInputDevice *inputDevice, Qt::Edges edges) override;
     bool move(QWaylandInputDevice *inputDevice) override;

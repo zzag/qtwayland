@@ -35,7 +35,7 @@ bool QWaylandWlShellIntegration::initialize(QWaylandDisplay *display)
 
 QWaylandShellSurface *QWaylandWlShellIntegration::createShellSurface(QWaylandWindow *window)
 {
-    return new QWaylandWlShellSurface(m_wlShell->get_shell_surface(window->wlSurface()), window);
+    return new QWaylandWlShellSurface(m_wlShell->object(), window);
 }
 
 void *QWaylandWlShellIntegration::nativeResourceForWindow(const QByteArray &resource, QWindow *window)
