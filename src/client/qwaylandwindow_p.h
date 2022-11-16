@@ -48,6 +48,7 @@ class QWaylandSubSurface;
 class QWaylandAbstractDecoration;
 class QWaylandInputDevice;
 class QWaylandScreen;
+class QWaylandShellData;
 class QWaylandShellIntegration;
 class QWaylandShmBackingStore;
 class QWaylandPointerEvent;
@@ -125,6 +126,7 @@ public:
 
     QWaylandDisplay *display() const { return mDisplay; }
     QWaylandShellSurface *shellSurface() const;
+    QWaylandShellData *shellData() const;
     QWaylandSubSurface *subSurfaceWindow() const;
     QWaylandScreen *waylandScreen() const;
 
@@ -240,6 +242,7 @@ protected:
 
     QWaylandShellIntegration *mShellIntegration = nullptr;
     QWaylandShellSurface *mShellSurface = nullptr;
+    QScopedPointer<QWaylandShellData> mShellData;
     QWaylandSubSurface *mSubSurfaceWindow = nullptr;
     QList<QWaylandSubSurface *> mChildren;
 

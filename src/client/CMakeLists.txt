@@ -43,6 +43,7 @@ qt_internal_add_module(WaylandClient
         qwaylandpointergestures.cpp qwaylandpointergestures_p.h
         qwaylandqtkey.cpp qwaylandqtkey_p.h
         qwaylandscreen.cpp qwaylandscreen_p.h
+        qwaylandshelldata_p.h
         qwaylandshellsurface.cpp qwaylandshellsurface_p.h
         qwaylandshm.cpp qwaylandshm_p.h
         qwaylandshmbackingstore.cpp qwaylandshmbackingstore_p.h

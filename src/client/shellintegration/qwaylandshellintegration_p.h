@@ -35,6 +35,7 @@ namespace QtWaylandClient {
 class QWaylandWindow;
 class QWaylandDisplay;
 class QWaylandShellSurface;
+class QWaylandShellData;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandShellIntegration
 {
@@ -44,6 +45,10 @@ public:
 
     virtual bool initialize(QWaylandDisplay *display) = 0;
     virtual QWaylandShellSurface *createShellSurface(QWaylandWindow *window) = 0;
+    virtual QWaylandShellData *createShellData(QWaylandWindow *window) {
+        Q_UNUSED(window)
+        return nullptr;
+    }
     virtual void *nativeResourceForWindow(const QByteArray &resource, QWindow *window) {
         Q_UNUSED(resource);
         Q_UNUSED(window);

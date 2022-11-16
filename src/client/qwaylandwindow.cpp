@@ -8,6 +8,7 @@
 #include "qwaylandsurface_p.h"
 #include "qwaylandinputdevice_p.h"
 #include "qwaylandscreen_p.h"
+#include "qwaylandshelldata_p.h"
 #include "qwaylandshellsurface_p.h"
 #include "qwaylandsubsurface_p.h"
 #include "qwaylandabstractdecoration_p.h"
@@ -190,6 +191,7 @@ void QWaylandWindow::setShellIntegration(QWaylandShellIntegration *shellIntegrat
         return;
     }
     mShellIntegration = shellIntegration;
+    mShellData.reset(shellIntegration->createShellData(this));
 }
 
 bool QWaylandWindow::shouldCreateShellSurface() const
@@ -810,6 +812,11 @@ wl_surface *QWaylandWindow::wlSurface()
 QWaylandShellSurface *QWaylandWindow::shellSurface() const
 {
     return mShellSurface;
+}
+
+QWaylandShellData *QWaylandWindow::shellData() const
+{
+    return mShellData.get();
 }
 
 QWaylandSubSurface *QWaylandWindow::subSurfaceWindow() const
