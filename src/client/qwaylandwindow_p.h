@@ -225,10 +225,6 @@ public:
     void beginFrame();
     void endFrame();
 
-    void addChildPopup(QWaylandWindow* child);
-    void removeChildPopup(QWaylandWindow* child);
-    void closeChildPopups();
-
 public slots:
     void applyConfigure();
 
@@ -317,8 +313,6 @@ protected:
 
     QMargins mCustomMargins;
 
-    QList<QPointer<QWaylandWindow>> mChildPopups;
-
 private:
     void setGeometry_helper(const QRect &rect);
     void initWindow();
@@ -331,6 +325,7 @@ private:
     void setOpaqueArea(const QRegion &opaqueArea);
     bool isOpaque() const;
     void updateViewport();
+    void closeChildPopups();
 
     void handleMouseEventWithDecoration(QWaylandInputDevice *inputDevice, const QWaylandPointerEvent &e);
     void handleScreensChanged();

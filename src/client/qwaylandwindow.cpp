@@ -1601,19 +1601,14 @@ void QWaylandWindow::setXdgActivationToken(const QString &token)
     mShellSurface->setXdgActivationToken(token);
 }
 
-void QWaylandWindow::addChildPopup(QWaylandWindow *surface) {
-    mChildPopups.append(surface);
-}
+void QWaylandWindow::closeChildPopups()
+{
+    if (!mShellSurface)
+        return;
 
-void QWaylandWindow::removeChildPopup(QWaylandWindow *surface) {
-    mChildPopups.removeAll(surface);
-}
-
-void QWaylandWindow::closeChildPopups() {
-    while (!mChildPopups.isEmpty()) {
-        auto popup = mChildPopups.takeLast();
-        popup->reset();
-    }
+    const QList<QWaylandShellSurface *> popups = mShellSurface->popups();
+    for (auto it = popups.crbegin(); it != popups.crend(); ++it)
+        (*it)->window()->reset();
 }
 }
 

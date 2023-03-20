@@ -80,6 +80,17 @@ void QWaylandShellSurface::requestXdgActivationToken(quint32 serial)
     Q_UNUSED(serial);
     Q_EMIT m_window->xdgActivationTokenCreated({});
 }
+
+void QWaylandShellSurface::attachPopup(QWaylandShellSurface *popup)
+{
+    Q_ASSERT(!m_popups.contains(popup));
+    m_popups.append(popup);
+}
+
+void QWaylandShellSurface::detachPopup(QWaylandShellSurface *popup)
+{
+    m_popups.removeOne(popup);
+}
 }
 
 QT_END_NAMESPACE

@@ -211,10 +211,8 @@ QWaylandXdgSurface::Popup::Popup(QWaylandXdgSurface *xdgSurface, QWaylandWindow 
     , m_parent(parent)
 {
 
-    init(xdgSurface->get_popup(m_parentXdgSurface ? m_parentXdgSurface->object() : nullptr, positioner->object()));
-    if (m_parent) {
-        m_parent->addChildPopup(m_xdgSurface->window());
-    }
+    init(xdgSurface->get_popup(m_parentXdgSurface ? m_parentXdgSurface->object() : nullptr,
+                               positioner->object()));
 }
 
 QWaylandXdgSurface::Popup::~Popup()
@@ -223,7 +221,7 @@ QWaylandXdgSurface::Popup::~Popup()
         destroy();
 
     if (m_parent) {
-        m_parent->removeChildPopup(m_xdgSurface->window());
+        m_parent->shellSurface()->detachPopup(m_xdgSurface);
     }
 
     if (m_grabbing) {
@@ -484,8 +482,9 @@ void QWaylandXdgSurface::setPopup(QWaylandWindow *parent)
         | QtWayland::xdg_positioner::constraint_adjustment_slide_y);
     m_popup = new Popup(this, parent, positioner);
     positioner->destroy();
-
     delete positioner;
+
+    parent->shellSurface()->attachPopup(this);
 }
 
 void QWaylandXdgSurface::setGrabPopup(QWaylandWindow *parent, QWaylandInputDevice *device, int serial)

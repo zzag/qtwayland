@@ -84,6 +84,10 @@ public:
 
     virtual std::any surfaceRole() const { return std::any(); };
 
+    QList<QWaylandShellSurface *> popups() const { return m_popups; }
+    virtual void attachPopup(QWaylandShellSurface *popup);
+    virtual void detachPopup(QWaylandShellSurface *popup);
+
 protected:
     void resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset = {0, 0});
     void repositionFromApplyConfigure(const QPoint &position);
@@ -95,6 +99,7 @@ protected:
 
 private:
     QWaylandWindow *m_window = nullptr;
+    QList<QWaylandShellSurface *> m_popups;
     friend class QWaylandWindow;
 };
 
