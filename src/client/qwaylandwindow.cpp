@@ -135,6 +135,12 @@ void QWaylandWindow::initWindow()
 
         mShellSurface = mShellIntegration->createShellSurface(this);
         if (mShellSurface) {
+            mEffectiveTransientParent = transientParent();
+            if (mEffectiveTransientParent) {
+                if (window()->type() == Qt::Popup || window()->type() == Qt::ToolTip)
+                    mEffectiveTransientParent->addChildPopup(this);
+            }
+
             // Set initial surface title
             setWindowTitle(window()->title());
 
@@ -267,6 +273,10 @@ void QWaylandWindow::reset()
         emit wlSurfaceDestroyed();
         QWriteLocker lock(&mSurfaceLock);
         invalidateSurface();
+        if (mEffectiveTransientParent) {
+            mEffectiveTransientParent->removeChildPopup(this);
+            mEffectiveTransientParent = nullptr;
+        }
         delete mShellSurface;
         mShellSurface = nullptr;
         delete mSubSurfaceWindow;

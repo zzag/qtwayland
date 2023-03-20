@@ -317,6 +317,7 @@ protected:
 
     QMargins mCustomMargins;
 
+    QPointer<QWaylandWindow> mEffectiveTransientParent;
     QList<QPointer<QWaylandWindow>> mChildPopups;
 
 private:
