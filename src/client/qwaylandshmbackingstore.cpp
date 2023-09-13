@@ -171,6 +171,8 @@ void QWaylandShmBackingStore::beginPaint(const QRegion &region)
     mPainting = true;
     ensureSize();
 
+    waylandWindow()->diffState();
+
     if (mBackBuffer->image()->hasAlphaChannel()) {
         QPainter p(paintDevice());
         p.setCompositionMode(QPainter::CompositionMode_Source);

@@ -113,8 +113,7 @@ void QWaylandWindow::initWindow()
             mScale = preferredScale;
             QWindowSystemInterface::handleWindowDevicePixelRatioChanged(window());
             ensureSize();
-            if (mViewport)
-                updateViewport();
+            updateViewport();
             if (isExposed()) {
                 // redraw at the new DPR
                 window()->requestUpdate();
@@ -189,10 +188,11 @@ void QWaylandWindow::initWindow()
     // Enable high-dpi rendering. Scale() returns the screen scale factor and will
     // typically be integer 1 (normal-dpi) or 2 (high-dpi). Call set_buffer_scale()
     // to inform the compositor that high-resolution buffers will be provided.
+    updateViewport();
     if (mViewport)
-        updateViewport();
+        mPending.bufferScale = 1;
     else if (mSurface->version() >= 3)
-        mSurface->set_buffer_scale(std::ceil(scale()));
+        mPending.bufferScale = std::ceil(scale());
 
     setWindowFlags(window()->flags());
     QRect geometry = windowGeometry();
@@ -260,6 +260,7 @@ bool QWaylandWindow::shouldCreateSubSurface() const
 void QWaylandWindow::beginFrame()
 {
     mSurfaceLock.lockForRead();
+    diffState();
 }
 
 void QWaylandWindow::endFrame()
@@ -312,6 +313,9 @@ void QWaylandWindow::reset()
 
     mQueuedBuffer = nullptr;
     mQueuedBufferDamage = QRegion();
+
+    mCurrent = QWaylandWindowState{};
+    mPending = QWaylandWindowState{};
 
     mDisplay->handleWindowDestroyed(this);
 }
@@ -397,8 +401,7 @@ void QWaylandWindow::setGeometry_helper(const QRect &rect)
     }
 
     QPlatformWindow::setGeometry(QRect(rect.x(), rect.y(), width, height));
-    if (mViewport)
-        updateViewport();
+    updateViewport();
 
     if (mSubSurfaceWindow) {
         QMargins m = static_cast<QWaylandWindow *>(QPlatformWindow::parent())->clientSideMargins();
@@ -438,9 +441,10 @@ void QWaylandWindow::setGeometry(const QRect &r)
         sendExposeEvent(exposeGeometry);
 
     if (mShellSurface && isExposed()) {
-        mShellSurface->setWindowGeometry(windowContentGeometry());
-        if (!qt_window_private(window())->positionAutomatic)
-            mShellSurface->setWindowPosition(windowGeometry().topLeft());
+        mPending.content = windowContentGeometry();
+        // mShellSurface->setWindowGeometry(windowContentGeometry());
+        // if (!qt_window_private(window())->positionAutomatic)
+        //     mShellSurface->setWindowPosition(windowGeometry().topLeft());
     }
 
     if (isOpaque() && mMask.isEmpty())
@@ -465,18 +469,16 @@ void QWaylandWindow::updateInputRegion()
     mTransparentInputRegion = transparentInputRegion;
 
     if (mInputRegion.isEmpty() && !mTransparentInputRegion) {
-        mSurface->set_input_region(nullptr);
+        mPending.input.reset();
     } else {
-        struct ::wl_region *region = mDisplay->createRegion(mInputRegion);
-        mSurface->set_input_region(region);
-        wl_region_destroy(region);
+        mPending.input = mInputRegion;
     }
 }
 
 void QWaylandWindow::updateViewport()
 {
     if (!surfaceSize().isEmpty())
-        mViewport->setDestination(surfaceSize());
+        mPending.size = surfaceSize();
 }
 
 void QWaylandWindow::setGeometryFromApplyConfigure(const QPoint &globalPosition, const QSize &sizeWithMargins)
@@ -977,7 +979,7 @@ void QWaylandWindow::handleContentOrientationChange(Qt::ScreenOrientation orient
         default:
             Q_UNREACHABLE();
     }
-    mSurface->set_buffer_transform(transform);
+    mPending.bufferTransform = transform;
 }
 
 void QWaylandWindow::setOrientationMask(Qt::ScreenOrientations mask)
@@ -1398,10 +1400,11 @@ void QWaylandWindow::handleScreensChanged()
         mScale = scale;
         QWindowSystemInterface::handleWindowDevicePixelRatioChanged(window());
         if (mSurface) {
+            updateViewport();
             if (mViewport)
-                updateViewport();
+                mPending.bufferScale = 1;
             else if (mSurface->version() >= 3)
-                mSurface->set_buffer_scale(std::ceil(mScale));
+                mPending.bufferScale = std::ceil(mScale);
         }
         ensureSize();
     }
@@ -1678,10 +1681,7 @@ void QWaylandWindow::setOpaqueArea(const QRegion &opaqueArea)
         return;
 
     mOpaqueArea = translatedOpaqueArea;
-
-    struct ::wl_region *region = mDisplay->createRegion(translatedOpaqueArea);
-    mSurface->set_opaque_region(region);
-    wl_region_destroy(region);
+    mPending.opaque = translatedOpaqueArea;
 }
 
 void QWaylandWindow::requestXdgActivationToken(uint serial)
@@ -1724,6 +1724,50 @@ void QWaylandWindow::reinit()
     }
 }
 
+void QWaylandWindow::diffState()
+{
+    QMutexLocker lock(&mResizeLock);
+
+    if (mCurrent.bufferTransform != mPending.bufferTransform) {
+        mSurface->set_buffer_transform(mPending.bufferTransform);
+    }
+
+    if (mCurrent.bufferScale != mPending.bufferScale) {
+        mSurface->set_buffer_scale(mPending.bufferScale);
+    }
+
+    if (mCurrent.input != mPending.input) {
+        if (!mPending.input.has_value()) {
+            mSurface->set_input_region(nullptr);
+        } else {
+            struct ::wl_region *region = mDisplay->createRegion(mInputRegion);
+            mSurface->set_input_region(region);
+            wl_region_destroy(region);
+        }
+    }
+
+    if (mCurrent.opaque != mPending.opaque) {
+        if (!mPending.opaque.has_value()) {
+            mSurface->set_opaque_region(nullptr);
+        } else {
+            struct ::wl_region *region = mDisplay->createRegion(mInputRegion);
+            mSurface->set_opaque_region(region);
+            wl_region_destroy(region);
+        }
+    }
+
+    if (mCurrent.size != mPending.size) {
+        if (mViewport)
+            mViewport->setDestination(mPending.size);
+    }
+
+    if (mCurrent.content != mPending.content) {
+        if (mShellSurface)
+            mShellSurface->setWindowGeometry(mPending.content);
+    }
+
+    mCurrent = mPending;
+}
 }
 
 QT_END_NAMESPACE

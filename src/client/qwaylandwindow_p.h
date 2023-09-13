@@ -59,6 +59,19 @@ class QWaylandSurface;
 class QWaylandFractionalScale;
 class QWaylandViewport;
 
+class Q_WAYLANDCLIENT_EXPORT QWaylandWindowState
+{
+public:
+    std::optional<QRegion> input;
+    std::optional<QRegion> opaque;
+
+    wl_output_transform bufferTransform = WL_OUTPUT_TRANSFORM_NORMAL;
+    int bufferScale = 1;
+
+    QSize size;
+    QRect content;
+};
+
 class Q_WAYLANDCLIENT_EXPORT QWaylandWindow : public QNativeInterface::Private::QWaylandWindow,
                                               public QPlatformWindow
 {
@@ -230,6 +243,8 @@ public:
 
     void closeChildPopups();
 
+    void diffState();
+
     virtual void reinit();
     void reset();
 
@@ -355,6 +370,9 @@ private:
     bool mInResizeFromApplyConfigure = false;
     bool lastVisible = false;
     QRect mLastExposeGeometry;
+
+    QWaylandWindowState mCurrent;
+    QWaylandWindowState mPending;
 
     static const wl_callback_listener callbackListener;
     void handleFrameCallback(struct ::wl_callback* callback);
