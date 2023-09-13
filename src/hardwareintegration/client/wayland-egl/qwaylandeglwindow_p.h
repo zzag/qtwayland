@@ -35,11 +35,11 @@ public:
     ~QWaylandEglWindow();
     WindowType windowType() const override;
     void ensureSize() override;
-
-    void updateSurface(bool create);
     void setGeometry(const QRect &rect) override;
+
     QRect contentsRect() const;
 
+    EGLSurface getOrCreateEglSurface();
     EGLSurface eglSurface() const;
     GLuint contentFBO() const;
     GLuint contentTexture() const;

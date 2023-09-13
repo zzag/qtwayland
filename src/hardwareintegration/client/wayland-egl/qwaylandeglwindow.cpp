@@ -58,8 +58,6 @@ void QWaylandEglWindow::ensureSize()
         QWriteLocker lock(&m_bufferSizeLock);
         m_bufferSize = sizeWithMargins;
     }
-
-    updateSurface(false);
 }
 
 void QWaylandEglWindow::setGeometry(const QRect &rect)
@@ -72,7 +70,7 @@ void QWaylandEglWindow::setGeometry(const QRect &rect)
     ensureSize();
 }
 
-void QWaylandEglWindow::updateSurface(bool create)
+EGLSurface QWaylandEglWindow::getOrCreateEglSurface()
 {
     QSize sizeWithMargins;
     {
@@ -111,11 +109,11 @@ void QWaylandEglWindow::updateSurface(bool create)
 
                 m_resize = true;
             }
-        } else if (create && mSurface) {
+        } else if (mSurface) {
             wl_egl_window *eglWindow = wl_egl_window_create(mSurface->object(), sizeWithMargins.width(), sizeWithMargins.height());
             if (Q_UNLIKELY(!eglWindow)) {
                 qCWarning(lcQpaWayland, "Could not create wl_egl_window with size %dx%d\n", sizeWithMargins.width(), sizeWithMargins.height());
-                return;
+                return EGL_NO_SURFACE;
             }
 
             QSurfaceFormat fmt = window()->requestedFormat();
@@ -128,7 +126,7 @@ void QWaylandEglWindow::updateSurface(bool create)
             if (Q_UNLIKELY(eglSurface == EGL_NO_SURFACE)) {
                 qCWarning(lcQpaWayland, "Could not create EGL surface (EGL error 0x%x)\n", eglGetError());
                 wl_egl_window_destroy(eglWindow);
-                return;
+                return EGL_NO_SURFACE;
             }
 
             m_waylandEglWindow = eglWindow;
@@ -136,6 +134,13 @@ void QWaylandEglWindow::updateSurface(bool create)
             m_requestedSize = sizeWithMargins;
         }
     }
+
+    return m_eglSurface;
+}
+
+EGLSurface QWaylandEglWindow::eglSurface() const
+{
+    return m_eglSurface;
 }
 
 QRect QWaylandEglWindow::contentsRect() const
@@ -162,11 +167,6 @@ void QWaylandEglWindow::invalidateSurface()
     }
     delete m_contentFBO;
     m_contentFBO = nullptr;
-}
-
-EGLSurface QWaylandEglWindow::eglSurface() const
-{
-    return m_eglSurface;
 }
 
 GLuint QWaylandEglWindow::contentFBO() const

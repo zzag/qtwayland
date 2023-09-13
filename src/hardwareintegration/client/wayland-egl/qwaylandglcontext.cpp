@@ -330,34 +330,23 @@ bool QWaylandGLContext::makeCurrent(QPlatformSurface *surface)
     }
 
     m_currentWindow = static_cast<QWaylandEglWindow *>(surface);
-    EGLSurface eglSurface = m_currentWindow->eglSurface();
 
-    if (!m_currentWindow->needToUpdateContentFBO() && (eglSurface != EGL_NO_SURFACE)) {
-        if (!eglMakeCurrent(eglDisplay(), eglSurface, eglSurface, eglContext())) {
-            qWarning("QWaylandGLContext::makeCurrent: eglError: %#x, this: %p \n", eglGetError(), this);
-            return false;
-        }
-        return true;
-    }
-
-    if (m_currentWindow->isExposed())
-        m_currentWindow->setCanResize(false);
-
-    if (eglSurface == EGL_NO_SURFACE) {
-        m_currentWindow->updateSurface(true);
-        eglSurface = m_currentWindow->eglSurface();
-    }
+    EGLSurface eglSurface = m_currentWindow->getOrCreateEglSurface();
+    if (eglSurface == EGL_NO_SURFACE)
+        return false;
 
     if (!eglMakeCurrent(eglDisplay(), eglSurface, eglSurface, eglContext())) {
         qWarning("QWaylandGLContext::makeCurrent: eglError: %#x, this: %p \n", eglGetError(), this);
-        m_currentWindow->setCanResize(true);
         return false;
     }
 
-    //### setCurrentContext will be called in QOpenGLContext::makeCurrent after this function
-    // returns, but that's too late, as we need a current context in order to bind the content FBO.
-    QOpenGLContextPrivate::setCurrentContext(context());
-    m_currentWindow->bindContentFBO();
+    if (m_currentWindow->needToUpdateContentFBO()) {
+        // ### setCurrentContext will be called in QOpenGLContext::makeCurrent after this function
+        //  returns, but that's too late, as we need a current context in order to bind the content
+        //  FBO.
+        QOpenGLContextPrivate::setCurrentContext(context());
+        m_currentWindow->bindContentFBO();
+    }
 
     return true;
 }
@@ -403,8 +392,6 @@ void QWaylandGLContext::swapBuffers(QPlatformSurface *surface)
     window->handleUpdate();
     if (!eglSwapBuffers(eglDisplay(), eglSurface))
         qCWarning(lcQpaWayland, "eglSwapBuffers failed with %#x, surface: %p", eglGetError(), eglSurface);
-
-    window->setCanResize(true);
 }
 
 GLuint QWaylandGLContext::defaultFramebufferObject(QPlatformSurface *surface) const
