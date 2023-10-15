@@ -159,6 +159,7 @@ public:
     void raise() override;
     void lower() override;
 
+    void setOpaque(bool opaque) override;
     void setMask(const QRegion &region) override;
 
     void setAlertState(bool enabled) override;
@@ -353,7 +354,6 @@ private:
     void resetSurfaceRole();
     QPlatformScreen *calculateScreenFromSurfaceEvents() const;
     void setOpaqueArea(const QRegion &opaqueArea);
-    bool isOpaque() const;
     void updateInputRegion();
     void updateViewport();
     bool calculateExposure() const;

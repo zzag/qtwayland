@@ -461,7 +461,7 @@ void QWaylandWindow::setGeometry(const QRect &r)
     if (mShellSurface)
         mShellSurface->setContentGeometry(windowContentGeometry());
 
-    if (isOpaque() && mMask.isEmpty())
+    if (window()->isOpaque() && mMask.isEmpty())
         setOpaqueArea(QRect(QPoint(0, 0), rect.size()));
 
 
@@ -611,6 +611,22 @@ void QWaylandWindow::lower()
         mShellSurface->lower();
 }
 
+void QWaylandWindow::setOpaque(bool opaque)
+{
+    QReadLocker locker(&mSurfaceLock);
+    if (!mSurface)
+        return;
+
+    if (opaque) {
+        if (mMask.isEmpty())
+            setOpaqueArea(QRect(QPoint(0, 0), geometry().size()));
+        else
+            setOpaqueArea(mMask);
+    } else {
+        setOpaqueArea(QRegion());
+    }
+}
+
 void QWaylandWindow::setMask(const QRegion &mask)
 {
     QReadLocker locker(&mSurfaceLock);
@@ -624,7 +640,7 @@ void QWaylandWindow::setMask(const QRegion &mask)
 
     updateInputRegion();
 
-    if (isOpaque()) {
+    if (window()->isOpaque()) {
         if (mMask.isEmpty())
             setOpaqueArea(QRect(QPoint(0, 0), geometry().size()));
         else
@@ -1764,11 +1780,6 @@ bool QtWaylandClient::QWaylandWindow::startSystemMove()
         return rc;
     }
     return false;
-}
-
-bool QWaylandWindow::isOpaque() const
-{
-    return window()->requestedFormat().alphaBufferSize() <= 0;
 }
 
 void QWaylandWindow::setOpaqueArea(const QRegion &opaqueArea)
