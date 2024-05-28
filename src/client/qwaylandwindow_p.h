@@ -99,6 +99,8 @@ public:
     inline QIcon windowIcon() const;
     void setWindowIcon(const QIcon &icon) override;
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     void resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset = {0, 0});
     void repositionFromApplyConfigure(const QPoint &position);

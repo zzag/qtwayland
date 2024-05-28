@@ -417,6 +417,29 @@ QRect QWaylandWindow::defaultGeometry() const
     return QRect(QPoint(), QSize(500,500));
 }
 
+void QWaylandWindow::move(const QPoint &point)
+{
+    QPoint effectivePosition = point;
+    if (fixedToplevelPositions && !QPlatformWindow::parent() && window()->type() != Qt::Popup
+        && window()->type() != Qt::ToolTip) {
+        effectivePosition = screen()->geometry().topLeft();
+    }
+    setGeometry_helper(QRect(effectivePosition, windowGeometry().size());
+
+    if (window()->isVisible())
+        QWindowSystemInterface::handlePositionChange(window(), effectivePosition);
+
+    if (mShellSurface) {
+        if (!qt_window_private(window())->positionAutomatic && !mInResizeFromApplyConfigure)
+            mShellSurface->setWindowPosition(windowGeometry().topLeft());
+    }
+}
+
+void QWaylandWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(windowGeometry().topLeft(), size));
+}
+
 void QWaylandWindow::setGeometry_helper(const QRect &rect)
 {
     QPlatformWindow::setGeometry(rect);
@@ -522,9 +545,8 @@ void QWaylandWindow::repositionFromApplyConfigure(const QPoint &globalPosition)
     QMargins margins = clientSideMargins();
     QPoint positionWithoutMargins = globalPosition + QPoint(margins.left(), margins.top());
 
-    QRect geometry(positionWithoutMargins, windowGeometry().size());
     mInResizeFromApplyConfigure = true;
-    setGeometry(geometry);
+    move(positionWithoutMargins);
     mInResizeFromApplyConfigure = false;
 }
 
@@ -533,11 +555,10 @@ void QWaylandWindow::resizeFromApplyConfigure(const QSize &sizeWithMargins, cons
     QMargins margins = clientSideMargins();
     int widthWithoutMargins = qMax(sizeWithMargins.width() - (margins.left() + margins.right()), 1);
     int heightWithoutMargins = qMax(sizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
-    QRect geometry(windowGeometry().topLeft(), QSize(widthWithoutMargins, heightWithoutMargins));
 
     mOffset += offset;
     mInResizeFromApplyConfigure = true;
-    setGeometry(geometry);
+    resize(QSize(widthWithoutMargins, heightWithoutMargins));
     mInResizeFromApplyConfigure = false;
 }
 
