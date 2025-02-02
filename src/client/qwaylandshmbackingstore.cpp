@@ -99,7 +99,7 @@ QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
     mShmPool = wl_shm_create_pool(shm->object(), fd, alloc);
 
     wl_buffer *shmBuffer = wl_shm_pool_create_buffer(mShmPool,0, size.width(), size.height(), stride, wl_format);
-    wl_proxy_set_queue(reinterpret_cast<wl_proxy *>(shmBuffer), display->frameEventQueue());
+    wl_proxy_set_queue(reinterpret_cast<wl_proxy *>(shmBuffer), display->graphicsEventQueue());
     init(shmBuffer);
 }
 

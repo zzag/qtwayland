@@ -354,8 +354,8 @@ QWaylandDisplay::~QWaylandDisplay(void)
     if (m_eventThread)
         m_eventThread->stop();
 
-    if (m_frameEventQueueThread)
-        m_frameEventQueueThread->stop();
+    if (m_graphicsEventQueueThread)
+        m_graphicsEventQueueThread->stop();
 
     if (mSyncCallback)
         wl_callback_destroy(mSyncCallback);
@@ -371,8 +371,8 @@ QWaylandDisplay::~QWaylandDisplay(void)
     mCursorThemes.clear();
 #endif
 
-    if (m_frameEventQueue)
-        wl_event_queue_destroy(m_frameEventQueue);
+    if (m_graphicsEventQueue)
+        wl_event_queue_destroy(m_graphicsEventQueue);
 
     // Reset the globals manually since they need to be destroyed before the wl_display
     mGlobals = {};
@@ -421,9 +421,9 @@ void QWaylandDisplay::reconnect()
 {
     qCWarning(lcQpaWayland) << "Attempting wayland reconnect";
     m_eventThread->stop();
-    m_frameEventQueueThread->stop();
+    m_graphicsEventQueueThread->stop();
     m_eventThread->wait();
-    m_frameEventQueueThread->wait();
+    m_graphicsEventQueueThread->wait();
 
     qDeleteAll(mWaitingScreens);
     mWaitingScreens.clear();
@@ -495,8 +495,8 @@ void QWaylandDisplay::reconnect()
     setupConnection();
     initialize();
 
-    if (m_frameEventQueue)
-        wl_event_queue_destroy(m_frameEventQueue);
+    if (m_graphicsEventQueue)
+        wl_event_queue_destroy(m_graphicsEventQueue);
     initEventThread();
 
     auto needsRecreate = [](QPlatformWindow *window) {
@@ -538,10 +538,10 @@ void QWaylandDisplay::initEventThread()
     m_eventThread->start();
 
     // wl_display_disconnect() free this.
-    m_frameEventQueue = wl_display_create_queue(mDisplay);
-    m_frameEventQueueThread.reset(
-            new EventThread(mDisplay, m_frameEventQueue, EventThread::SelfDispatch));
-    m_frameEventQueueThread->start();
+    m_graphicsEventQueue = wl_display_create_queue(mDisplay);
+    m_graphicsEventQueueThread.reset(
+            new EventThread(mDisplay, m_graphicsEventQueue, EventThread::SelfDispatch));
+    m_graphicsEventQueueThread->start();
 }
 
 void QWaylandDisplay::checkWaylandError()

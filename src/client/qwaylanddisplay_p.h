@@ -266,7 +266,7 @@ public:
     void handleKeyboardFocusChanged(QWaylandInputDevice *inputDevice);
     void handleWindowDestroyed(QWaylandWindow *window);
 
-    wl_event_queue *frameEventQueue() { return m_frameEventQueue; };
+    wl_event_queue *graphicsEventQueue() { return m_graphicsEventQueue; };
 
     bool isKeyboardAvailable() const;
     bool isWaylandInputContextRequested() const;
@@ -302,8 +302,8 @@ private:
     };
     struct wl_display *mDisplay = nullptr;
     std::unique_ptr<EventThread> m_eventThread;
-    wl_event_queue *m_frameEventQueue = nullptr;
-    QScopedPointer<EventThread> m_frameEventQueueThread;
+    wl_event_queue *m_graphicsEventQueue = nullptr;
+    QScopedPointer<EventThread> m_graphicsEventQueueThread;
     QList<QWaylandScreen *> mWaitingScreens;
     QList<QWaylandScreen *> mScreens;
     QPlatformPlaceholderScreen *mPlaceholderScreen = nullptr;
