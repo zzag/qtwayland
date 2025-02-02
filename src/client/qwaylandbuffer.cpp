@@ -29,8 +29,8 @@ void QWaylandBuffer::init(wl_buffer *buf)
 void QWaylandBuffer::release(void *data, wl_buffer *)
 {
     QWaylandBuffer *self = static_cast<QWaylandBuffer *>(data);
-    self->mBusy = false;
     self->mCommitted = false;
+    self->mBusy = false;
 }
 
 const wl_buffer_listener QWaylandBuffer::listener = {

@@ -97,8 +97,10 @@ QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
     mImage.setDevicePixelRatio(scale);
 
     mShmPool = wl_shm_create_pool(shm->object(), fd, alloc);
-    init(wl_shm_pool_create_buffer(mShmPool,0, size.width(), size.height(),
-                                       stride, wl_format));
+
+    wl_buffer *shmBuffer = wl_shm_pool_create_buffer(mShmPool,0, size.width(), size.height(), stride, wl_format);
+    wl_proxy_set_queue(reinterpret_cast<wl_proxy *>(shmBuffer), display->frameEventQueue());
+    init(shmBuffer);
 }
 
 QWaylandShmBuffer::~QWaylandShmBuffer(void)

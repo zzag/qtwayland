@@ -47,8 +47,8 @@ protected:
     struct wl_buffer *mBuffer = nullptr;
 
 private:
-    bool mBusy = false;
-    bool mCommitted = false;
+    std::atomic_bool mBusy = false;
+    std::atomic_bool mCommitted = false;
 
     static void release(void *data, wl_buffer *);
     static const wl_buffer_listener listener;
