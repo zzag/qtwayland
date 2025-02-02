@@ -222,11 +222,11 @@ void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, cons
     if (window != this->window()) {
         auto waylandWindow = static_cast<QWaylandWindow *>(window->handle());
         auto newBuffer = new QWaylandShmBuffer(mDisplay, window->size(), mBackBuffer->image()->format(), mBackBuffer->scale());
-        newBuffer->setDeleteOnRelease(true);
         QRect sourceRect(window->position(), window->size());
         QPainter painter(newBuffer->image());
         painter.drawImage(QPoint(0, 0), *mBackBuffer->image(), sourceRect);
         waylandWindow->safeCommit(newBuffer, region);
+        delete newBuffer;
         return;
     }
 
