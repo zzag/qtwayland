@@ -55,8 +55,8 @@ private:
                                                 uint32_t top, uint32_t bottom) override;
     void zqt_shell_surface_v1_set_capabilities(uint32_t capabilities) override;
 
-    QSize m_pendingSize;
-    QPoint m_pendingPosition = { -1, -1 };
+    QSizeF m_pendingSize;
+    QPointF m_pendingPosition = { -1, -1 };
     bool m_pendingPositionValid = false;
     Qt::WindowStates m_pendingStates = Qt::WindowNoState;
     Qt::WindowStates m_currentStates = Qt::WindowNoState;

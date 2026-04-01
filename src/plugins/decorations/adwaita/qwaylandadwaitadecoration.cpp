@@ -119,7 +119,7 @@ QMargins QWaylandAdwaitaDecoration::margins(QWaylandAbstractDecoration::MarginsT
 
 void QWaylandAdwaitaDecoration::paint(QPaintDevice *device)
 {
-    const QRect surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
+    const QRectF surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
 
     QPainter p(device);
     p.setRenderHint(QPainter::Antialiasing);
@@ -216,14 +216,14 @@ bool QWaylandAdwaitaDecoration::handleMouse(QWaylandInputDevice *inputDevice, co
         updateButtonHoverState(Button::None);
 
     // Figure out what area mouse is in
-    QRect surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
+    QRectF surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
     if (local.y() <= surfaceRect.top() + margins().top())
         processMouseTop(inputDevice, local, b, mods);
-    else if (local.y() > surfaceRect.bottom() - margins().bottom())
+    else if (local.y() >= surfaceRect.bottom() - margins().bottom())
         processMouseBottom(inputDevice, local, b, mods);
     else if (local.x() <= surfaceRect.left() + margins().left())
         processMouseLeft(inputDevice, local, b, mods);
-    else if (local.x() > surfaceRect.right() - margins().right())
+    else if (local.x() >= surfaceRect.right() - margins().right())
         processMouseRight(inputDevice, local, b, mods);
     else {
 #if QT_CONFIG(cursor)
@@ -433,7 +433,7 @@ QRectF QWaylandAdwaitaDecoration::buttonRect(Button button) const
     int yPos;
     const int btnPos = m_buttons.value(button);
 
-    const QRect surfaceRect = waylandWindow()->windowContentGeometry() + margins(QWaylandAbstractDecoration::ShadowsOnly);
+    const QRectF surfaceRect = waylandWindow()->windowContentGeometry() + margins(QWaylandAbstractDecoration::ShadowsOnly);
     if (m_placement == Right) {
         xPos = surfaceRect.width();
         xPos -= ceButtonWidth * btnPos;
@@ -622,7 +622,7 @@ void QWaylandAdwaitaDecoration::processMouseTop(QWaylandInputDevice *inputDevice
     Q_UNUSED(mods)
 
     QDateTime currentDateTime = QDateTime::currentDateTime();
-    QRect surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
+    QRectF surfaceRect = waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
 
     if (!buttonRect(Close).contains(local) && !buttonRect(Maximize).contains(local)
         && !buttonRect(Minimize).contains(local))
@@ -635,7 +635,7 @@ void QWaylandAdwaitaDecoration::processMouseTop(QWaylandInputDevice *inputDevice
             waylandWindow()->applyCursor(inputDevice, Qt::SizeFDiagCursor);
 #endif
             startResize(inputDevice, Qt::TopEdge | Qt::LeftEdge, b);
-        } else if (local.x() > surfaceRect.right() - margins().left()) {
+        } else if (local.x() >= surfaceRect.right() - margins().left()) {
             // top right bit
 #if QT_CONFIG(cursor)
             waylandWindow()->applyCursor(inputDevice, Qt::SizeBDiagCursor);
@@ -650,7 +650,7 @@ void QWaylandAdwaitaDecoration::processMouseTop(QWaylandInputDevice *inputDevice
         }
     } else if (local.x() <= surfaceRect.left() + margins().left()) {
         processMouseLeft(inputDevice, local, b, mods);
-    } else if (local.x() > surfaceRect.right() - margins().right()) {
+    } else if (local.x() >= surfaceRect.right() - margins().right()) {
         processMouseRight(inputDevice, local, b, mods);
     } else if (buttonRect(Close).contains(local)) {
         if (clickButton(b, Close)) {

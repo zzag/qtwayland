@@ -105,7 +105,7 @@ QWaylandShellSurface *QWaylandIviShellIntegration::createShellSurface(QWaylandWi
     QWaylandIviSurface *iviSurface = new QWaylandIviSurface(surface, window, controller);
 
     if (window->window()->type() == Qt::Popup) {
-        QPoint transientPos = window->geometry().topLeft(); // this is absolute
+        QPointF transientPos = window->geometry().topLeft(); // this is absolute
         QWaylandWindow *parent = window->transientParent();
         if (parent && parent->decoration()) {
             transientPos -= parent->geometry().topLeft();
