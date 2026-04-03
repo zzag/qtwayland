@@ -23,8 +23,8 @@ public:
     ~QWaylandQtSurface() override;
 
     void applyConfigure() override;
-    void setWindowPosition(const QPoint &position) override;
-    void setWindowSize(const QSize &size) override;
+    void setWindowPosition(const QPointF &position) override;
+    void setWindowSize(const QSizeF &size) override;
 
     void setWindowFlags(Qt::WindowFlags flags) override;
     void requestWindowStates(Qt::WindowStates states) override;

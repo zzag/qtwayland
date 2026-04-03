@@ -156,12 +156,12 @@ void QWaylandQtSurface::zqt_shell_surface_v1_set_window_state(uint32_t serial, u
     m_pendingStates = Qt::WindowStates(state);
 }
 
-void QWaylandQtSurface::setWindowPosition(const QPoint &position)
+void QWaylandQtSurface::setWindowPosition(const QPointF &position)
 {
     reposition(position.x(), position.y());
 }
 
-void QWaylandQtSurface::setWindowSize(const QSize &size)
+void QWaylandQtSurface::setWindowSize(const QSizeF &size)
 {
     set_size(size.width(), size.height());
 }
